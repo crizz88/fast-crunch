@@ -1,0 +1,14 @@
+# Binaries
+bin/
+jfreq
+*.o
+*.out
+
+# Testdaten (Wichtig!)
+*.json
+*.bin
+*.gz
+
+# OS-spezifisch
+.DS_Store
+Thumbs.db
