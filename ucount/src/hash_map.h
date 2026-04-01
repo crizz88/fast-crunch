@@ -19,10 +19,10 @@
   *
   */
 typedef struct {
-    _Atomic(struct Extend*) next;		// next pointer
-    _Atomic uint_least16_t occupied;		// indicate occupied / free slot, also locking bit for modification
-    _Atomic uint_least16_t isDuplicate;		// indicate duplicates
-    uint32_t data[13];				// store keys in the remaining space
+    _Atomic(struct Extend*) next;       // next pointer
+    _Atomic uint_least16_t occupied;        // indicate occupied / free slot, also locking bit for modification
+    _Atomic uint_least16_t isDuplicate;     // indicate duplicates
+    uint32_t data[13];              // store keys in the remaining space
 } __attribute__((aligned(CL_SIZE))) Extend;
 
 /**
@@ -30,11 +30,11 @@ typedef struct {
   *
   */
 typedef struct {
-    __m256i v_prime;				// vectorized hash
-    __m256i v_mask;				// vectorized hash
-    size_t map_mask;				// number of buckets - 1
-    size_t num_buckets;				// number of buckets
-    Extend *bucket;				// buckets
+    __m256i v_prime;                // vectorized hash
+    __m256i v_mask;             // vectorized hash
+    size_t map_mask;                // number of buckets - 1
+    size_t num_buckets;             // number of buckets
+    Extend *bucket;             // buckets
 } HashMap;
 
 

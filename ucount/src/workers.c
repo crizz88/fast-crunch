@@ -55,9 +55,9 @@ void* worker_read(void* arg) {
         if (current_pos + toRead > ra->end_offset) toRead = ra->end_offset - current_pos;
         bytesRead = pread(fd, getBufferData(emptySlot), toRead, current_pos);
         if (bytesRead <= 0) {
-	    setBufferStatus(emptySlot, SLOT_BUSY, SLOT_FINISH);
-	    break;
-	}
+            setBufferStatus(emptySlot, SLOT_BUSY, SLOT_FINISH);
+            break;
+        }
         setBufferLen(emptySlot, bytesRead);
         setBufferStatus(emptySlot, SLOT_BUSY, SLOT_FULL);
         current_pos += bytesRead;
@@ -78,7 +78,7 @@ void* worker_count(void* arg) {
         uint32_t *p = (uint32_t*) getBufferData(filledSlot);
         size_t actual_bytes = *getBufferLen(filledSlot);
 
-	ca->n_total += bitset_put(p, actual_bytes);
+        ca->n_total += bitset_put(p, actual_bytes);
 
         setBufferStatus(filledSlot, SLOT_BUSY, SLOT_EMPTY);
     }

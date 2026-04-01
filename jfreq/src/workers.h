@@ -20,7 +20,7 @@
 #define N_READERS 1             // 1 for streaming and unaligned data
 #endif
 #ifndef N_COUNTERS
-#define N_COUNTERS 3		// rest of cores
+#define N_COUNTERS 3        // rest of cores
 #endif
 
 

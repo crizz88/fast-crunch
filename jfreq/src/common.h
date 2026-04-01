@@ -77,17 +77,17 @@ static inline void init_config(int argc, char **argv, Config *conf) {
     int opt;
     while ((opt = getopt_long(argc, argv, "f:l:n:sv", in_options, NULL)) != -1) {
         switch (opt) {
-	    case 'l': if(optarg) conf->label = strdup(optarg); break;
-	    case 's': conf->json_stdin = true; break;
+            case 'l': if(optarg) conf->label = strdup(optarg); break;
+            case 's': conf->json_stdin = true; break;
             case 'f': if(optarg) conf->file_name = strdup(optarg); break;
-	    case 'n': if(optarg) conf->expected_records = atoi(optarg); break;
-	    case 'v': conf->verbose = true; break;
+            case 'n': if(optarg) conf->expected_records = atoi(optarg); break;
+            case 'v': conf->verbose = true; break;
             case '?': exit(EXIT_FAILURE);
         }
     }
     if (conf->json_stdin) {
-	conf->file_size = -1;
-	return;
+        conf->file_size = -1;
+        return;
     }
     if (!conf->file_name) {
         fprintf(stderr, "Specify necessary options (-s or -f (path_to_integer_file) and -l (attribute label).\n");

@@ -26,9 +26,9 @@ typedef struct {
   *
   */
 typedef struct {
-    uint32_t hash;          		// calculated hash
-    _Atomic uint32_t count; 		// atomic counter
-    uint32_t external_storage_offset;  	// copy of attribute string for comparison
+    uint32_t hash;                  // calculated hash
+    _Atomic uint32_t count;         // atomic counter
+    uint32_t external_storage_offset;   // copy of attribute string for comparison
 } HashEntry;
 
 /**
@@ -36,10 +36,10 @@ typedef struct {
   *
   */
 typedef struct Extend {
-    _Atomic(struct Extend*) next;		// next pointer
-    _Atomic uint_least8_t occupied;		// indicate occupied / free slot, also locking bit for modification
-    uint8_t padding[7];				// indicate duplicates
-    HashEntry data[SLOTS_PER_EXTEND];		// store attribute-labels in the remaining space
+    _Atomic(struct Extend*) next;       // next pointer
+    _Atomic uint_least8_t occupied;     // indicate occupied / free slot, also locking bit for modification
+    uint8_t padding[7];             // indicate duplicates
+    HashEntry data[SLOTS_PER_EXTEND];       // store attribute-labels in the remaining space
 } __attribute__((aligned(CL_SIZE))) Extend;
 
 /**
@@ -47,12 +47,12 @@ typedef struct Extend {
   *
   */
 typedef struct {
-    size_t external_storage_size;		// size of external storage for strings
-    _Atomic size_t external_storage_offset;	// offset for insert position
-    char *external_storage;			// external storage area
+    size_t external_storage_size;       // size of external storage for strings
+    _Atomic size_t external_storage_offset; // offset for insert position
+    char *external_storage;         // external storage area
     size_t map_mask;                            // number of buckets - 1
-    size_t num_buckets;				// number of buckets
-    Extend *bucket;				// buckets
+    size_t num_buckets;             // number of buckets
+    Extend *bucket;             // buckets
 } HashMap;
 
 /**

@@ -13,7 +13,7 @@
 #define N_READERS 1             // better lower for HDD, higher for SSD
 #endif
 #ifndef N_COUNTERS
-#define N_COUNTERS 3		// rest of cores
+#define N_COUNTERS 3        // rest of cores
 #endif
 
 

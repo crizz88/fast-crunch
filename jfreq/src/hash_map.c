@@ -57,7 +57,7 @@ static inline AttributeLabel hash_map_get_external(uint32_t offset) {
 static inline void ensure_external_space(size_t off) {
     if (off < map.external_storage_size) return;
 
-    while (atomic_flag_test_and_set(&ext_lock)); 
+    while (atomic_flag_test_and_set(&ext_lock));
     size_t old_size = map.external_storage_size;
     if (off >= old_size) {
         size_t new_size = old_size * 2;
@@ -100,13 +100,13 @@ static inline uint32_t storeExternal(AttributeLabel *label) {
   */
 static inline int find_slot(Extend *e, AttributeLabel *label, uint32_t hash, uint8_t occ_clean) {
     for (int i = 0; i < SLOTS_PER_EXTEND; i++) {
-	if ((occ_clean & (1 << i)) && 
-		(e->data[i].hash == hash)) {
-	    AttributeLabel ext = hash_map_get_external(
-                        e->data[i].external_storage_offset);
-	    if (compare_attribute_labels(&ext, label))
-	    	return i;
-	}
+        if ((occ_clean & (1 << i)) && 
+            (e->data[i].hash == hash)) {
+            AttributeLabel ext = hash_map_get_external(
+                            e->data[i].external_storage_offset);
+            if (compare_attribute_labels(&ext, label))
+                return i;
+        }
     }
     return RET_ERR;
 }
@@ -123,12 +123,12 @@ static inline HashEntry *seek_label(AttributeLabel *label, uint32_t hash, Extend
     occ_clean = atomic_load_explicit(&curr->occupied, memory_order_acquire) & (OMASK | VMASK);
 
     while (curr) {
-	uint16_t slot;
-	if ((slot = find_slot(curr, label, hash, occ_clean)) != RET_ERR) {
-	    return &curr->data[slot];
-	}
-	// try next extend
-	curr = (Extend*) atomic_load_explicit(&curr->next, memory_order_acquire);
+        uint16_t slot;
+        if ((slot = find_slot(curr, label, hash, occ_clean)) != RET_ERR) {
+            return &curr->data[slot];
+        }
+        // try next extend
+        curr = (Extend*) atomic_load_explicit(&curr->next, memory_order_acquire);
     }
     return NULL;
 }
@@ -152,67 +152,67 @@ static inline void bucket_entry_increment(HashEntry *entry) {
 static void bucket_insert(AttributeLabel *label, uint32_t hash, Extend *bucket) {
     Extend *curr = bucket;
     while (curr) {
-	int free_bit = -1;
+        int free_bit = -1;
         uint8_t occ = atomic_load_explicit(&curr->occupied, memory_order_acquire);
 
-	// first, search, if the entry already exist and increment
-	uint16_t slot = find_slot(curr, label, hash, occ);
-	if (slot != RET_ERR) {
-	    bucket_entry_increment(&curr->data[slot]);
-	    return;
-	}
+        // first, search, if the entry already exist and increment
+        uint16_t slot = find_slot(curr, label, hash, occ);
+        if (slot != RET_ERR) {
+            bucket_entry_increment(&curr->data[slot]);
+            return;
+        }
 
-	// check for free slot
-	uint8_t mask = ~occ & OMASK;
-	if (mask != 0) {
-	    free_bit = __builtin_ctz((uint8_t)(~occ & OMASK));
+        // check for free slot
+        uint8_t mask = ~occ & OMASK;
+        if (mask != 0) {
+            free_bit = __builtin_ctz((uint8_t)(~occ & OMASK));
 
-	    // reserve space 
-	    uint8_t expected = occ;
-	    if (!atomic_compare_exchange_strong(&curr->occupied, &expected, occ | (1u << free_bit)))
-		continue; // someone else was faster, retry
+            // reserve space 
+            uint8_t expected = occ;
+            if (!atomic_compare_exchange_strong(&curr->occupied, &expected, occ | (1u << free_bit)))
+            continue; // someone else was faster, retry
 
-	    // insert key values
-	    curr->data[free_bit].hash = hash;
-	    curr->data[free_bit].external_storage_offset = storeExternal(label);
+            // insert key values
+            curr->data[free_bit].hash = hash;
+            curr->data[free_bit].external_storage_offset = storeExternal(label);
 
 
-	    occ = expected |= (1u << free_bit);
+            occ = expected |= (1u << free_bit);
             if (!atomic_compare_exchange_strong(&curr->occupied, &expected, occ | (1u << (free_bit + SLOTS_PER_EXTEND)))) {
-		// re-check for concurrent insertions
-		Extend *retry_bucket;
-		HashEntry *retry_entry = seek_label(label, hash, &retry_bucket);
-		if ((retry_entry != NULL) && (retry_entry->external_storage_offset != curr->data[free_bit].external_storage_offset)) {
-		    // rollback and increment
-		    atomic_fetch_and_explicit(&curr->occupied, ~(1u << (free_bit)), memory_order_release);
-		    bucket_entry_increment(retry_entry);
-		    return;
-		} else {
-	            // make visible
-        	    atomic_fetch_or_explicit(&curr->occupied, 1u << (free_bit + SLOTS_PER_EXTEND), memory_order_release);
-		}
-	    }
-	    bucket_entry_increment(&curr->data[free_bit]);
-	    return;
-	}
+                // re-check for concurrent insertions
+                Extend *retry_bucket;
+                HashEntry *retry_entry = seek_label(label, hash, &retry_bucket);
+                if ((retry_entry != NULL) && (retry_entry->external_storage_offset != curr->data[free_bit].external_storage_offset)) {
+                    // rollback and increment
+                    atomic_fetch_and_explicit(&curr->occupied, ~(1u << (free_bit)), memory_order_release);
+                    bucket_entry_increment(retry_entry);
+                return;
+            } else {
+                // make visible
+                atomic_fetch_or_explicit(&curr->occupied, 1u << (free_bit + SLOTS_PER_EXTEND), memory_order_release);
+            }
+        }
+        bucket_entry_increment(&curr->data[free_bit]);
+        return;
+    }
 
         // key not found, no space for insert, check for extend
         Extend* next = (Extend*)atomic_load_explicit(&curr->next, memory_order_acquire);
         if (!next) {
-	    // prepare unlinked extend with data
+        // prepare unlinked extend with data
             Extend* new_bucket = calloc(1, sizeof(Extend));
 
             Extend* expected_next = NULL;
             if (atomic_compare_exchange_strong_explicit(&curr->next, 
-                                       		&expected_next, new_bucket,
-                                       		memory_order_acq_rel, memory_order_acquire)) {
-		curr = new_bucket;
-	    } else {
-		// others were faster, insert in other extend
+                                            &expected_next, new_bucket,
+                                            memory_order_acq_rel, memory_order_acquire)) {
+                curr = new_bucket;
+            } else {
+                // others were faster, insert in other extend
                 free(new_bucket);
                 curr = expected_next;
             }
-	    continue;
+        continue;
         }
         curr = next;
     }
@@ -238,8 +238,8 @@ void hash_map_init(size_t num_buckets, size_t external_storage_size) {
     map.bucket = mmap(NULL, map_size, PROT_READ | PROT_WRITE, 
                       MAP_PRIVATE | MAP_ANONYMOUS | MAP_HUGETLB, -1, 0);
     if (map.bucket == MAP_FAILED) {
-	// Fallback
-	map.bucket = mmap(NULL, map_size, PROT_READ | PROT_WRITE, 
+    // Fallback
+        map.bucket = mmap(NULL, map_size, PROT_READ | PROT_WRITE, 
                       MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
     }
 
@@ -274,11 +274,11 @@ void hash_map_put_or_increment(char *p, size_t actual_bytes) {
 
     // check if attribute already exist in hash map
     if (entry == NULL) {
-	// if not, insert it
-	bucket_insert(&label, hash, bucket);
+        // if not, insert it
+        bucket_insert(&label, hash, bucket);
     } else {
-    	// increment count
-    	bucket_entry_increment(entry);
+        // increment count
+        bucket_entry_increment(entry);
     }
 }
 
@@ -290,9 +290,9 @@ void hash_map_put_or_increment(char *p, size_t actual_bytes) {
 HashMapCursor init_hash_map_cursor() {
     HashMapCursor cursor = {0};
     if (map.num_buckets > 0) {
-    	cursor.current_bucket = 0;
-    	cursor.current_slot = 0;
-    	cursor.current_extend = NULL;
+        cursor.current_bucket = 0;
+        cursor.current_slot = 0;
+        cursor.current_extend = NULL;
     }
     return cursor;
 }

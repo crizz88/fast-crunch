@@ -28,11 +28,11 @@ static inline void bucket_insert(uint32_t bucket_idx, uint32_t val) {
     uint64_t bitmask = SHIFT_BIT << (val & UINT64_MASK);
     // optimistic atomic put
     if (!(atomic_load_explicit(&bitset[bucket_idx].occupied[b_slot_idx], memory_order_relaxed) & bitmask)) {
-	if (atomic_fetch_or_explicit(&bitset[bucket_idx].occupied[b_slot_idx], bitmask, memory_order_relaxed) & bitmask) {
-	    atomic_fetch_or_explicit(&bitset[bucket_idx].isDuplicate[b_slot_idx], bitmask, memory_order_relaxed);
-	}
+        if (atomic_fetch_or_explicit(&bitset[bucket_idx].occupied[b_slot_idx], bitmask, memory_order_relaxed) & bitmask) {
+            atomic_fetch_or_explicit(&bitset[bucket_idx].isDuplicate[b_slot_idx], bitmask, memory_order_relaxed);
+        }
     } else {
-	atomic_fetch_or_explicit(&bitset[bucket_idx].isDuplicate[b_slot_idx], bitmask, memory_order_relaxed);
+        atomic_fetch_or_explicit(&bitset[bucket_idx].isDuplicate[b_slot_idx], bitmask, memory_order_relaxed);
     }
 }
 
@@ -78,7 +78,7 @@ size_t bitset_put(uint32_t *p, size_t actual_bytes) {
     // 1. Prefetch buckets 0-7
     if (n_elements >= VEC) {
         for (int k = 0; k < VEC; k++) {
-	    curr_ptr[k] = get_bucket_index(p[k]);
+            curr_ptr[k] = get_bucket_index(p[k]);
             __builtin_prefetch(&bitset[curr_ptr[k]], 1, 3);
         }
         i = VEC;
@@ -87,7 +87,7 @@ size_t bitset_put(uint32_t *p, size_t actual_bytes) {
     for (; i + VEC <= n_elements; i += VEC) {
         // calculate and prefetch next
         for (int k = 0; k < VEC; k++) {
-	    next_ptr[k] = get_bucket_index(p[i + k]);
+            next_ptr[k] = get_bucket_index(p[i + k]);
             __builtin_prefetch(&bitset[next_ptr[k]], 1, 3);
         }
         // process current

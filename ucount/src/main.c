@@ -19,42 +19,42 @@ int main(int argc, char *argv[]) {
     if (conf.verbose) start[0] = get_time();
 
     if (conf.demo) {
-	uint32_t demo_ints[3][4] __attribute__((aligned(CL_SIZE))) = 
-				{	{0x100, 0x100, 0xfff, 0xfff},
-					{0x100, 0x100, 0x100, 0x100},
-					{0x100, 0x100, 0x800, 0xfff}};
-	printf("Demo mode:\n");
+        uint32_t demo_ints[3][4] __attribute__((aligned(CL_SIZE))) = 
+                {   {0x100, 0x100, 0xfff, 0xfff},
+                    {0x100, 0x100, 0x100, 0x100},
+                    {0x100, 0x100, 0x800, 0xfff}};
+        printf("Demo mode:\n");
         printf("===========================================\n");
-	for (int i = 0; i < 3; i++) {
-	    // For small datasets ( < 1GB ) use HashMap
-	    hash_map_init(1);
-	    hash_map_put(&demo_ints[i][0], 16);
-	    hash_map_get_results(&counter_a, &counter_b);
-	    //bitset_init();
-	    //bitset_put(&demo_ints[i][0], 16);
-	    //bitset_get_results(&counter_a, &counter_b);
-	    counter_c = 4;
-	    if(conf.mode_a) printf("0x%x 0x%x 0x%x 0x%x -> %ld unique numbers\n", 
-		demo_ints[i][0], demo_ints[i][1], demo_ints[i][2], demo_ints[i][3], counter_a);
-	    if(conf.mode_b) printf("0x%x 0x%x 0x%x 0x%x -> %ld numbers seen only once\n", 
+        for (int i = 0; i < 3; i++) {
+            // For small datasets ( < 1GB ) use HashMap
+            hash_map_init(1);
+            hash_map_put(&demo_ints[i][0], 16);
+            hash_map_get_results(&counter_a, &counter_b);
+            //bitset_init();
+            //bitset_put(&demo_ints[i][0], 16);
+            //bitset_get_results(&counter_a, &counter_b);
+            counter_c = 4;
+            if(conf.mode_a) printf("0x%x 0x%x 0x%x 0x%x -> %ld unique numbers\n", 
+                demo_ints[i][0], demo_ints[i][1], demo_ints[i][2], demo_ints[i][3], counter_a);
+            if(conf.mode_b) printf("0x%x 0x%x 0x%x 0x%x -> %ld numbers seen only once\n", 
                 demo_ints[i][0], demo_ints[i][1], demo_ints[i][2], demo_ints[i][3], counter_b);
             if(conf.mode_c) printf("0x%x 0x%x 0x%x 0x%x -> %ld total numbers\n", 
                 demo_ints[i][0], demo_ints[i][1], demo_ints[i][2], demo_ints[i][3], counter_c);
-	    printf("===========================================\n");
+            printf("===========================================\n");
 
-	}
-	return 0;
+        }
+    return 0;
     }
 
     bitset_init();
 
     // Start threads
     for(int i = 0; i < N_READERS; i++) {
-	initReaderParam(&ra[i], &conf, i);
+        initReaderParam(&ra[i], &conf, i);
         pthread_create(&tr[i], NULL, worker_read, &ra[i]);
     }
     for(int  i = 0; i < N_COUNTERS; i++) {
-	ca[i].n_total = 0;
+        ca[i].n_total = 0;
         ca[i].slot = (POOL_SIZE / N_COUNTERS) * i;
         pthread_create(&tc[i], NULL, worker_count, &ca[i]);
     }
@@ -76,17 +76,17 @@ int main(int argc, char *argv[]) {
 
 
     if (conf.verbose) {
-	printf("COUNTERS finished work after %lf seconds.\n", get_time()-start[0]);
-	start[1] = get_time();
+        printf("COUNTERS finished work after %lf seconds.\n", get_time()-start[0]);
+        start[1] = get_time();
     }
 
     //calculate result
     bitset_get_results(&counter_a, &counter_b);
 
     if (conf.mode_c) {
-	for(int i = 0; i < N_COUNTERS; i++) {
-	    counter_c += ca[i].n_total;
-	}
+        for(int i = 0; i < N_COUNTERS; i++) {
+            counter_c += ca[i].n_total;
+        }
     }
 
 

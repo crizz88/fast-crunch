@@ -34,9 +34,9 @@ static inline void getRemainder(size_t remainder_len, char *remainder, uint16_t 
   */
 static inline bool isEOF_remainder(size_t bytesRead, size_t remainder_len, uint16_t emptySlot) {
     if (bytesRead <= 0) {
-	setBufferLen(emptySlot, remainder_len);
-	setBufferStatus(emptySlot, SLOT_BUSY, SLOT_FULL);
-	return true;
+        setBufferLen(emptySlot, remainder_len);
+        setBufferStatus(emptySlot, SLOT_BUSY, SLOT_FULL);
+        return true;
     }
     return false;
 }
@@ -50,11 +50,11 @@ static inline ssize_t processRemainderGetLength(char* remainder, size_t *remaind
     char *last_bracket = memrchr(getBufferData(emptySlot), OBJECTTERMINATOR, total_read);
 
     if (!last_bracket) {
-	if (!memrchr(getBufferData(emptySlot), ']', total_read)) {// race condition at EOF -1
+        if (!memrchr(getBufferData(emptySlot), ']', total_read)) {// race condition at EOF -1
             fprintf(stderr, "Error: Single JSON object exceeds slot size. Increase FIO_SIZE or check input. %ld, %ld, %s\n", total_read, *remainder_len, getBufferData(emptySlot));
             exit(EXIT_FAILURE);
         }
-	return 0;
+        return 0;
     }
 
     ssize_t valid_len = (last_bracket - getBufferData(emptySlot)) + 1;
@@ -78,17 +78,17 @@ static inline void processJson(uint16_t slot, CounterArg *ca) {
         while (ptr < end && *ptr != LABELTERMINATOR) ptr++;
         size_t val_len = ptr - start;
 
-	if (val_len > MAX_ATTRIBUTE_STR_LEN) {
-	    fprintf(stderr, 
-		"Error: Attribute string exceeds maximum size (%d > %ld). Increase MAX_ATTRIBUTE_LABEL_LEN.\n"
-		,MAX_ATTRIBUTE_STR_LEN, val_len);
-	    exit(EXIT_FAILURE);
-	}
+    if (val_len > MAX_ATTRIBUTE_STR_LEN) {
+        fprintf(stderr, 
+        "Error: Attribute string exceeds maximum size (%d > %ld). Increase MAX_ATTRIBUTE_LABEL_LEN.\n"
+        ,MAX_ATTRIBUTE_STR_LEN, val_len);
+        exit(EXIT_FAILURE);
+    }
 
         if (val_len > 0) {
             hash_map_put_or_increment(start, val_len);
         }
-	if (ptr < end) ptr++;
+        if (ptr < end) ptr++;
     }
 }
 
@@ -122,12 +122,12 @@ void initReaderParam(ReaderArg *ra, void* arg, int id) {
     ra->path = conf->file_name;
     ra->json_stdin = conf->json_stdin;
     if (ra->json_stdin) {
-	ra->slot = 0;
-	if (N_READERS > 1) {
-	    fprintf(stderr, "Error: Only one reader is assumed for streaming processing.\n");
-	    exit(EXIT_FAILURE);
-	}
-	return;
+        ra->slot = 0;
+        if (N_READERS > 1) {
+            fprintf(stderr, "Error: Only one reader is assumed for streaming processing.\n");
+            exit(EXIT_FAILURE);
+        }
+        return;
     }
    off_t chunk = conf->file_size / N_READERS;
     off_t start = chunk * id;
@@ -167,51 +167,51 @@ void* worker_read(void* arg) {
     size_t remainder_len = 0;
     char remainder[FIO_SIZE];
     if (ra->json_stdin) {
-	fd = STDIN_FILENO;
-	uint32_t poll_count = 0;
-	while (true) {
+        fd = STDIN_FILENO;
+        uint32_t poll_count = 0;
+        while (true) {
             emptySlot = getEmptySlot(ra->slot);
 
-	    if (!setBufferStatus(emptySlot, SLOT_EMPTY, SLOT_BUSY)) continue;
+            if (!setBufferStatus(emptySlot, SLOT_EMPTY, SLOT_BUSY)) continue;
 
-	    getRemainder(remainder_len, remainder, emptySlot);
+            getRemainder(remainder_len, remainder, emptySlot);
 
-	    ssize_t total_read = remainder_len;
-	    poll_count = 0;
-	    while (total_read < FIO_SIZE) {
-		bytesRead = read(fd, getBufferData(emptySlot) + total_read, FIO_SIZE - total_read);
-		total_read += bytesRead;
-		checked_polling(&poll_count, 1);
-		if (poll_count == 0 && isEOF_remainder(bytesRead, remainder_len, emptySlot)) break;
-	    }
-    	    ssize_t buf_len = processRemainderGetLength(remainder, &remainder_len, total_read, emptySlot);
-	    setBufferLen(emptySlot, buf_len);
-	    if (buf_len == 0) {
-	        setBufferStatus(emptySlot, SLOT_BUSY, SLOT_FINISH);
-		break; // no valid data on buffer
-	    }
-  	    setBufferStatus(emptySlot, SLOT_BUSY, SLOT_FULL);
-	}
+            ssize_t total_read = remainder_len;
+            poll_count = 0;
+            while (total_read < FIO_SIZE) {
+                bytesRead = read(fd, getBufferData(emptySlot) + total_read, FIO_SIZE - total_read);
+                total_read += bytesRead;
+                checked_polling(&poll_count, 1);
+                if (poll_count == 0 && isEOF_remainder(bytesRead, remainder_len, emptySlot)) break;
+            }
+            ssize_t buf_len = processRemainderGetLength(remainder, &remainder_len, total_read, emptySlot);
+            setBufferLen(emptySlot, buf_len);
+            if (buf_len == 0) {
+                setBufferStatus(emptySlot, SLOT_BUSY, SLOT_FINISH);
+                break; // no valid data on buffer
+            }
+            setBufferStatus(emptySlot, SLOT_BUSY, SLOT_FULL);
+        }
     } else {
-	fd = open((ra->path), O_RDONLY); // | O_DIRECT); crazy stuff happens with O_DIRECT and unaligned reads
-	off_t current_pos = ra->start_offset;
-	if(fd < 0) {
+        fd = open((ra->path), O_RDONLY); // | O_DIRECT); crazy stuff happens with O_DIRECT and unaligned reads
+        off_t current_pos = ra->start_offset;
+        if(fd < 0) {
             fprintf(stderr, "Error opening file");
             exit(EXIT_FAILURE);
-	}
+        }
 
-	posix_fadvise(fd, 0, 0, POSIX_FADV_SEQUENTIAL);
-	posix_fadvise(fd, 0, 0, POSIX_FADV_NOREUSE);
+        posix_fadvise(fd, 0, 0, POSIX_FADV_SEQUENTIAL);
+        posix_fadvise(fd, 0, 0, POSIX_FADV_NOREUSE);
 
-	while (current_pos < ra->end_offset) {
+        while (current_pos < ra->end_offset) {
 
             emptySlot = getEmptySlot(ra->slot);
 
             if (!setBufferStatus(emptySlot, SLOT_EMPTY, SLOT_BUSY)) continue;
 
-	    getRemainder(remainder_len, remainder, emptySlot);
+            getRemainder(remainder_len, remainder, emptySlot);
 
-	    size_t maxToRead = FIO_SIZE - remainder_len;
+            size_t maxToRead = FIO_SIZE - remainder_len;
             size_t remainingInFile = ra->end_offset - current_pos;
             size_t toRead = (remainingInFile < maxToRead) ? remainingInFile : maxToRead;
 
@@ -253,7 +253,7 @@ void* worker_count(void* arg) {
     while ((filledSlot = getFilledSlot(ca->slot)) != RET_ERR) {
         if (!setBufferStatus(filledSlot, SLOT_FULL, SLOT_BUSY)) continue;
 
-	processJson(filledSlot, ca);
+        processJson(filledSlot, ca);
 
         setBufferStatus(filledSlot, SLOT_BUSY, SLOT_EMPTY);
     }

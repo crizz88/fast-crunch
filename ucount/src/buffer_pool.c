@@ -15,10 +15,10 @@ void setFinished() {
    uint16_t slot;
    size_t finishedSlots = 0;
     while((finishedSlots < POOL_SIZE) 
-		&& (slot = getEmptySlot(0))!=RET_ERR) {
+        && (slot = getEmptySlot(0))!=RET_ERR) {
         atomic_store(&(pool.misc[slot].status), SLOT_FINISH);
-	finishedSlots++;
-	__builtin_ia32_pause();
+        finishedSlots++;
+        __builtin_ia32_pause();
     }
     atomic_store(&(pool.finished), true);
 }

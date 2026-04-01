@@ -17,10 +17,10 @@ void setFinished() {
     size_t finishedSlots = 0;
     uint32_t poll_count = 0;
     while((finishedSlots < POOL_SIZE) 
-		&& (slot = getEmptySlot(0))!=RET_ERR) {
+        && (slot = getEmptySlot(0))!=RET_ERR) {
         atomic_store(&(pool.misc[slot].status), SLOT_FINISH);
-	finishedSlots++;
-	checked_polling(&poll_count, 0);
+        finishedSlots++;
+        checked_polling(&poll_count, 0);
     }
     atomic_store(&(pool.finished), true);
 }

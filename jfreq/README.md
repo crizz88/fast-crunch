@@ -1,50 +1,44 @@
-#General:
-This is a high-throughput string frequency analysis of a potentially infinite JSON stream with
-constant performance metrics based on input data size and available processing & I/O-ressources.
+# jfreq
 
-#Comments:
+High-throughput string frequency analysis of a potentially infinite JSON stream with constant performance metrics based on input data size and available processing & I/O-ressources.
 
-The program uses a multi-threaded worker framework. Since the data is delivered via a pipe 
-(decompressor), the solution must handle unaligned stream fragments and short-reads 
-without significant overhead by zero-copy intention. 
-Scalable Approches:
-A full JSON parser would be overkill, since there are is intended a flat object stream without hierarchy.
-Hence, the stream is directly scanned for 'attribute_name_label:' by memmem() and strings and objects 
-are terminated by '"' and '\n' or '}' (configurable at compile time).
-The absolute number of different attribute values is unknown, so a dynamic storage structure is 
-required. A hash map allows fast seeks and updates dynamically. Variable length keys, however,
-should be avoided inside the bucket in order to enable performant comparisons and concurrency.
-Hence an external storage area is implemented. The result set is pretty small, hence only a few buckets
-are created with the maximum size of several cachelines plus small external storage, but can be scaled
-up to GB of data. If an attribute is already existend, a co-located counter value is incremented atomically.
-The assumed bottlenecks are network transfer and/or decompression pipe. Hence, only one stream reader
-and one parser thread are used to leave processing power to the preceding pipe. zcat or lbzip2 enable 
-fast parallel decompression. Local JSON-files can be processed with massive parallelism (compile time)
-and specified with the '-f' flag.
-A subsequent sort is performed in the pipe.
+## Design and Implementation
 
+The program uses a multi-threaded worker framework. Since the data is delivered via a pipe (decompressor), the solution handles unaligned stream fragments and short-reads without significant overhead by zero-copy intention. 
 
-#Future Work
-Path-aware scanning (e.g., -l actor.login)
-Support for nested object depth filtering
+### Scalable Approach
+A full JSON parser would be overkill, since there is intended a flat object stream without hierarchy. Hence, the stream is directly scanned for 'attribute_name_label:' by `memmem()` and strings and objects are terminated by `"` and `\n` or `}` (configurable at compile time).
 
-#Compile:
-make -j4
+### Storage Architecture
+The absolute number of different attribute values is unknown, so a dynamic storage structure is required. A hash map allows fast seeks and updates dynamically. Variable length keys, however, should be avoided inside the bucket in order to enable performant comparisons and concurrency. Hence an external storage area is implemented. The result set is typically small, hence only a few buckets are created with the maximum size of several cachelines plus small external storage, but can be scaled up to GB of data. If an attribute already exists, a co-located counter value is incremented atomically.
 
-#Run Program:
-./jfreq -s -l 'attribute' < {stream} // hint: compile with single reader for stream
+### Bottleneck Management
+The assumed bottlenecks are network transfer and/or decompression pipe. Hence, only one stream reader and one parser thread are used to leave processing power to the preceding pipe. `zcat` or `lbzip2` enable fast parallel decompression. Local JSON-files can be processed with massive parallelism (compile time) and specified with the '-f' flag. A subsequent sort is performed in the pipe.
 
-./jfreq -f 'path' -l 'attribute' // hint: compile with multiple readers for SSD, single reader vor HDD 
+## Future Work
+- Path-aware scanning (e.g., `-l actor.login`)
+- Support for nested object depth filtering
 
--v --> verbose
+## Compile
+`make -j4`
 
--l {label} --> attribute name label
--n {number} --> expected different values of attribute
+## Usage
 
--f {file_name} --> path of local uncompressed file copy
--s --> json stream
+### Stream Processing (hint: compile with single reader for stream)
+`./jfreq -s -l 'attribute' < {stream}`
 
-#Example Output (compare example_gharchive.sh -> types.txt):
+### Local File Processing (hint: compile with multiple readers for SSD, single reader for HDD)
+`./jfreq -f 'path' -l 'attribute'`
+
+### Parameters
+- `-v` --> verbose
+- `-l {label}` --> attribute name label
+- `-n {number}` --> expected different values of attribute
+- `-f {file_name}` --> path of local uncompressed file copy
+- `-s` --> json stream
+
+## Example Output (compare example_gharchive.sh)
+```text
 PushEvent: 94723
 User: 21571
 PullRequestEvent: 17951
@@ -64,69 +58,42 @@ GollumEvent: 92
 PublicEvent: 65
 CommitCommentEvent: 56
 DiscussionEvent: 33
+```
+## Test Environment
+- **System:** Asus G752VM
+- **CPU:** Intel(R) Core(TM) i7-6700HQ CPU @ 2.60GHz
+- **RAM:** Samsung SODIMM DDR4 Synchron 2400 MHz (0,4 ns)
+- **DISK:** NVMe disk Samsung (256GB)
+- **OS:** Ubuntu 25.10 Linux 6.17.0-14-generic
 
+## Benchmarks
 
-#Test Environment:
-System
-Asus (G752VM)
-CPU: Intel(R) Core(TM) i7-6700HQ CPU @ 2.60GHz
-RAM: Samsung SODIMM DDR4 Synchron 2400 MHz (0,4 ns)
-DISK: NVMe disk Samsung (256GB)
+### Performance jfreq vs. jq from decompressor pipe (>6x faster)
+- **jfreq:** `time cat json.gz | zcat - | ./jfreq -s -l 'login' -n 60000 > /dev/null`  
+  `real 0m1,725s | user 0m1,851s | sys 0m0,240s`
+- **jq:** `time cat json.gz | zcat - | jq -n 'reduce (inputs | .. | objects | .login? | strings) as $t ({}; .[$t] += 1)' > /dev/null`  
+  `real 0m11,498s | user 0m13,069s | sys 0m0,239s`
 
-Ubuntu 25.10 Linux 6.17.0-14-generic
+### Performance jfreq vs. jq multi-threaded local uncompressed file on SSD (>100x faster)
+- **jfreq:** `time ./jfreq -f ~/gh.json -l 'login' -n 60000 > /dev/null`  
+  `real 0m0,102s | user 0m0,235s | sys 0m0,114s`
+- **jq:** `time jq -n 'reduce (inputs | .. | objects | .login? | strings) as $t ({}; .[$t] += 1)' ~/gh.json > /dev/null`  
+  `real 0m10,729s | user 0m10,654s | sys 0m0,074s`
 
-
-#Performance jfreq vs. jq from decompressor pipe (>6x faster):
-$ time cat json.gz | zcat - | ./jfreq -s -l 'login' -n 60000 > /dev/null
-real	0m1,725s
-user	0m1,851s
-sys	0m0,240s
-
-$ time cat json.gz | zcat - | jq -n 'reduce (inputs | .. | objects | .login? | strings) as $t ({}; .[$t] += 1)' > /dev/null
-real	0m11,498s
-user	0m13,069s
-sys	0m0,239s
-
-$ time cat json.gz | zcat - | ./jfreq -s -l 'type' > /dev/null
-real	0m1,710s
-user	0m1,813s
-sys	0m0,235s
-
-$ time cat json.gz | zcat - | jq -n 'reduce (inputs | .. | objects | .type? | strings) as $t ({}; .[$t] += 1)' > /dev/null
-real	0m11,157s
-user	0m12,756s
-sys	0m0,232s
-
-#Performance jfreq vs. jq multi-threaded local uncompressed file on SSD (>100x faster):
-$ time ./jfreq -f ~/gh.json -l 'login' -n 60000 > /dev/null
-real	0m0,102s
-user	0m0,235s
-sys	0m0,114s
-
-$ time jq -n 'reduce (inputs | .. | objects | .login? | strings) as $t ({}; .[$t] += 1)' ~/gh.json > /dev/null
-real	0m10,729s
-user	0m10,654s
-sys	0m0,074s
-
-$ time ./jfreq -f ~/gh.json -l 'type' > /dev/null
-real	0m0,085s
-user	0m0,208s
-sys	0m0,098s
-
-$ time jq -n 'reduce (inputs | .. | objects | .type? | strings) as $t ({}; .[$t] += 1)' ~/gh.json > /dev/null
-real	0m10,444s
-user	0m10,351s
-sys	0m0,088s
-
-
-#Benchmark: The ">20GB Single-Line JSON" Industry Challenge (./getUncompressedData_industry.sh)
-- **Input:** >20 GB JSON file, containing 400M records, formatted as a single massive line.
+### Benchmark: The ">20GB Single-Line JSON" Industry Challenge
+Processing a massive ~21GB single-line JSON file containing 400M records.
 - **Python / jq:** Crash (OOM) or hang due to DOM-tree overhead.
 - **jfreq:** ~ 13.4 seconds (~1.58 GB/s throughput on SSD with 2 reader and 6 counter threads, 4MB blocks).
-- **Memory Footprint:** Constant (< 50MB), regardless of file or line size with 13 different model type labels.
-~/bigf.json: 21G on SSD
-compile flags: -DN_COUNTERS=6 -DN_READERS=2 -DOBJECTTERMINATOR="'}'" -DPOOL_SIZE=12 -DFIO_SIZE=4194304 -DHASH_MAP_BUCKET_SLOT=4 -DEXTERNAL_STORAGE_SIZE=512
+- **Memory Footprint:** Constant (< 50MB), regardless of file or line size.
+
+**Compile flags for this benchmark:**  
+`-DN_COUNTERS=6 -DN_READERS=2 -DOBJECTTERMINATOR="'}'" -DPOOL_SIZE=12 -DFIO_SIZE=4194304 -DHASH_MAP_BUCKET_SLOT=4 -DEXTERNAL_STORAGE_SIZE=512`
+
+```bash
 $ time ./jfreq -f ~/bigf.json -l 'model' > /dev/null
 real	0m13,385s
 user	1m9,116s
 sys	0m8,360s
+```
+
+*Created by **cR!zZ** - Specialized in Storage Engines & High-Performance Data Processing.*

@@ -48,10 +48,10 @@ static inline void init_config(int argc, char **argv, Config *conf) {
         switch (opt) {
             case 'f': conf->file_name = strdup(optarg); break;
             case 'a': conf->mode_c = true; break;
-	    case 'u': conf->mode_a = true; break;
+            case 'u': conf->mode_a = true; break;
             case 'o': conf->mode_b = true; break;
-	    case 'd': conf->demo = true; break;
-	    case 'v': conf->verbose = true; break;
+            case 'd': conf->demo = true; break;
+            case 'v': conf->verbose = true; break;
             case '?': exit(EXIT_FAILURE);
         }
     }

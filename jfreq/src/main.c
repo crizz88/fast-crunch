@@ -6,7 +6,6 @@
 #include "common.h"
 #include "workers.h"
 #include "buffer_pool.h"
-//#include "bitset.h"
 #include "hash_map.h"
 
 
@@ -38,11 +37,11 @@ int main(int argc, char *argv[]) {
 
     // Start threads
     for(int i = 0; i < N_READERS; i++) {
-	initReaderParam(&ra[i], &conf, i);
+        initReaderParam(&ra[i], &conf, i);
         pthread_create(&tr[i], NULL, worker_read, &ra[i]);
     }
     for(int  i = 0; i < N_COUNTERS; i++) {
-	initCounterParam(&ca[i], &conf, i);
+        initCounterParam(&ca[i], &conf, i);
         pthread_create(&tc[i], NULL, worker_count, &ca[i]);
     }
 
@@ -63,8 +62,8 @@ int main(int argc, char *argv[]) {
 
 
     if (conf.verbose) {
-	printf("COUNTERS finished work after %lf seconds.\n", get_time()-start[0]);
-	start[1] = get_time();
+        printf("COUNTERS finished work after %lf seconds.\n", get_time()-start[0]);
+        start[1] = get_time();
     }
 
     //calculate result
@@ -72,8 +71,8 @@ int main(int argc, char *argv[]) {
     size_t total_attributes = 0;
     HashMapCursor cur = init_hash_map_cursor();
     while((next = hash_map_next(&cur)) != NULL) {
-	printf("%.*s: %u\n", (int) next->attr.size, next->attr.data, next->count);
-	++total_attributes;
+        printf("%.*s: %u\n", (int) next->attr.size, next->attr.data, next->count);
+        ++total_attributes;
     }
     printf("Total %s(s) - %lu\n", conf.label, total_attributes);
 

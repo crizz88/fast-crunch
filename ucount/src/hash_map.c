@@ -27,8 +27,8 @@ void hash_map_init(size_t num_buckets) {
     map.bucket = mmap(NULL, map_size, PROT_READ | PROT_WRITE, 
                       MAP_PRIVATE | MAP_ANONYMOUS | MAP_HUGETLB, -1, 0);
     if (map.bucket == MAP_FAILED) {
-	// Fallback
-	map.bucket = mmap(NULL, map_size, PROT_READ | PROT_WRITE, 
+    // Fallback
+    map.bucket = mmap(NULL, map_size, PROT_READ | PROT_WRITE, 
                       MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
     }
 }
@@ -97,7 +97,7 @@ static void bucket_insert(uint32_t bucket_idx, uint32_t val) {
         // paranoid acquire
         uint16_t occ = atomic_load_explicit(&curr->occupied, memory_order_acquire);
 
-	// extra lock bit check for save reader mask
+    // extra lock bit check for save reader mask
         if (occ & LOCK_BIT) {
             __builtin_ia32_pause();
             continue; 
@@ -115,25 +115,25 @@ static void bucket_insert(uint32_t bucket_idx, uint32_t val) {
         if (clean_occ != VMASK) {
             uint16_t expected = clean_occ; // assume LOCK_BIT == 0
             if (atomic_compare_exchange_weak_explicit(
-			&curr->occupied, &expected, expected | LOCK_BIT,
-			memory_order_acq_rel, memory_order_acquire)) {
+                    &curr->occupied, &expected, expected | LOCK_BIT,
+                    memory_order_acq_rel, memory_order_acquire)) {
                 // --- CRITICAL ---
                 // check for concurrent update
                 int retry_slot = find_slot(curr, val, expected);
                 if (retry_slot == RET_ERR) {
-		    // we won, let's do work
+                    // we won, let's do work
                     int free_bit = __builtin_ctz(~expected & VMASK);
                     curr->data[free_bit] = val;
 
-		    // memory barrier and release.
+                    // memory barrier and release.
                     atomic_thread_fence(memory_order_release);
                     atomic_store_explicit(&curr->occupied, expected | (1u << free_bit), memory_order_release);
                     return;
                 } else {
                     // somebody else inserted equal key, set duplicate
-		    if (!(atomic_load_explicit(&curr->isDuplicate, memory_order_relaxed) & (1u << slot))) {
-                    	atomic_fetch_or_explicit(&curr->isDuplicate, (1u << retry_slot), memory_order_relaxed);
-		    }
+                    if (!(atomic_load_explicit(&curr->isDuplicate, memory_order_relaxed) & (1u << slot))) {
+                        atomic_fetch_or_explicit(&curr->isDuplicate, (1u << retry_slot), memory_order_relaxed);
+                    }
                     atomic_fetch_and_explicit(&curr->occupied, ~LOCK_BIT, memory_order_release);
                     return;
                 }
@@ -145,7 +145,7 @@ static void bucket_insert(uint32_t bucket_idx, uint32_t val) {
         // linked list bucket extends
         Extend* next = (Extend*)atomic_load_explicit(&curr->next, memory_order_acquire);
         if (!next) {
-	    // prepare unlinked extend with data
+            // prepare unlinked extend with data
             Extend* new_bucket = calloc(1, sizeof(Extend));
             new_bucket->data[0] = val;
             new_bucket->occupied = 1u;
@@ -156,7 +156,7 @@ static void bucket_insert(uint32_t bucket_idx, uint32_t val) {
                                                        memory_order_acq_rel, memory_order_acquire)) {
                 return;
             } else {
-		// others were faster, insert in other extend
+                // others were faster, insert in other extend
                 free(new_bucket);
                 curr = (Extend*)expected_next;
                 continue;
@@ -190,20 +190,20 @@ void hash_map_put(uint32_t *p, size_t actual_bytes) {
     }
     // 2. Store previous buckets and prefetch next
     for (; i + vec <= n_elements; i += vec) {
-	// calculate and prefetch next
+        // calculate and prefetch next
         __m256i v_next = get_hash_vectorized(&p[i], map.v_prime, map.v_mask);
         _mm256_store_si256((__m256i*)next_ptr, v_next);
         for (int k = 0; k < vec; k++) {
             __builtin_prefetch(&map.bucket[next_ptr[k]], 1, 3);
         }
-	// insert current
+        // insert current
         for (int k = 0; k < vec; k++) {
             bucket_insert(curr_ptr[k], p[i - vec + k]);
         }
-	// swap next -> current
-	uint32_t *tmp = curr_ptr;
-	curr_ptr = next_ptr;
-	next_ptr = tmp;
+        // swap next -> current
+        uint32_t *tmp = curr_ptr;
+        curr_ptr = next_ptr;
+        next_ptr = tmp;
     }
     // 3. Store last round
     if (i >= vec) {
