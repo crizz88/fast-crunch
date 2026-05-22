@@ -49,14 +49,13 @@ static inline void bucket_insert(uint32_t bucket_idx, uint32_t val) {
 void bitset_init() {
     size_t bitset_size = (size_t) NUM_BUCKETS * sizeof(Bucket);
     bitset = mmap(NULL, bitset_size, PROT_READ | PROT_WRITE, 
-                      MAP_SHARED | MAP_ANONYMOUS | MAP_HUGETLB, -1, 0);
+                      MAP_SHARED | MAP_ANONYMOUS | MAP_HUGETLB | MAP_POPULATE, -1, 0);
     if (bitset == MAP_FAILED) {
         // Fallback
         bitset = mmap(NULL, bitset_size, PROT_READ | PROT_WRITE, 
-                      MAP_SHARED | MAP_ANONYMOUS, -1, 0);
+                      MAP_SHARED | MAP_ANONYMOUS | MAP_POPULATE, -1, 0);
     }
-    // better do it now:
-    memset(bitset, 0, bitset_size);
+
     static_assert(atomic_is_lock_free(&bitset[0].occupied[0]));
     static_assert(atomic_is_lock_free(&bitset[0].isDuplicate[0]));
 }

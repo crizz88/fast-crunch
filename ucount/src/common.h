@@ -57,7 +57,7 @@ static inline void init_config(int argc, char **argv, Config *conf) {
     }
     if (conf->demo) return;
     if (!conf->file_name) {
-        fprintf(stderr, "Specify necessary options (-a and/or -b, and -f (path_to_integer_file).\n");
+        fprintf(stderr, "Specify necessary options (-u, -o and/or -a, and -f (path_to_integer_file).\n");
         exit(EXIT_FAILURE);
     }
     int fd = open((conf->file_name), O_RDONLY| O_DIRECT);

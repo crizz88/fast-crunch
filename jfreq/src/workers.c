@@ -80,7 +80,7 @@ static inline void processJson(uint16_t slot, CounterArg *ca) {
 
     if (val_len > MAX_ATTRIBUTE_STR_LEN) {
         fprintf(stderr, 
-        "Error: Attribute string exceeds maximum size (%d > %ld). Increase MAX_ATTRIBUTE_LABEL_LEN.\n"
+        "Error: Attribute string exceeds maximum size (%d > %ld). Increase MAX_ATTRIBUTE_STR_LEN.\n"
         ,MAX_ATTRIBUTE_STR_LEN, val_len);
         exit(EXIT_FAILURE);
     }

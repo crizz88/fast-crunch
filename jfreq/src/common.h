@@ -90,7 +90,7 @@ static inline void init_config(int argc, char **argv, Config *conf) {
         return;
     }
     if (!conf->file_name) {
-        fprintf(stderr, "Specify necessary options (-s or -f (path_to_integer_file) and -l (attribute label).\n");
+        fprintf(stderr, "Specify necessary options (-s or -f (path_to_json_file) and -l (attribute label).\n");
         exit(EXIT_FAILURE);
     }
     int fd = open((conf->file_name), O_RDONLY| O_DIRECT);
