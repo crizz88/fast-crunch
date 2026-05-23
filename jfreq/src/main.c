@@ -79,5 +79,9 @@ int main(int argc, char *argv[]) {
     if (conf.verbose) printf("Final counting took %lf seconds.\n", get_time()-start[1]);
 
     if (conf.verbose) printf("Total Duration %lf seconds.\n", get_time()-start[0]);
+
+    free(conf.file_name);
+    free(conf.label);
+
     return 0;
 }

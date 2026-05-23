@@ -65,7 +65,7 @@ static inline uint32_t next_pow2(uint32_t n) {
 }
 
 static inline void checked_polling(uint32_t *poll_count, uint32_t relax) {
-    if (++(*poll_count) > relax ? relax : MAXPOLL) {
+    if (++(*poll_count) > (relax ? relax : MAXPOLL)) {
         usleep(POLLSLEEP);
         *poll_count = 0;
     } else {
@@ -77,9 +77,9 @@ static inline void init_config(int argc, char **argv, Config *conf) {
     int opt;
     while ((opt = getopt_long(argc, argv, "f:l:n:sv", in_options, NULL)) != -1) {
         switch (opt) {
-            case 'l': if(optarg) conf->label = strdup(optarg); break;
+            case 'l': if(optarg) free(conf->label); conf->label = strdup(optarg); break;
             case 's': conf->json_stdin = true; break;
-            case 'f': if(optarg) conf->file_name = strdup(optarg); break;
+            case 'f': if(optarg) free(conf->file_name); conf->file_name = strdup(optarg); break;
             case 'n': if(optarg) conf->expected_records = atoi(optarg); break;
             case 'v': conf->verbose = true; break;
             case '?': exit(EXIT_FAILURE);

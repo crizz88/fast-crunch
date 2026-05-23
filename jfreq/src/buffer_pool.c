@@ -6,7 +6,7 @@
 
 #include "buffer_pool.h"
 
-BufferPool pool __attribute__((aligned(FIO_SIZE))) = {0};
+BufferPool pool __attribute__((aligned(CL_SIZE))) = {0};
 
 /**
   * After reading EOF, finish buffer pool slots, that counter worker can terminate
