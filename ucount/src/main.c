@@ -96,5 +96,8 @@ int main(int argc, char *argv[]) {
     if (conf.mode_b) printf("%ld numbers seen only once\n", counter_b);
     if (conf.mode_c) printf("%ld total numbers\n", counter_c);
     if (conf.verbose) printf("Total Duration %lf seconds.\n", get_time()-start[0]);
+
+    free(conf.file_name);
+
     return 0;
 }

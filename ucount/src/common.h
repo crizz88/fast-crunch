@@ -46,7 +46,7 @@ static inline void init_config(int argc, char **argv, Config *conf) {
     int opt;
     while ((opt = getopt(argc, argv, "adf:ouv")) != -1) {
         switch (opt) {
-            case 'f': conf->file_name = strdup(optarg); break;
+            case 'f': free(conf->file_name); conf->file_name = strdup(optarg); break;
             case 'a': conf->mode_c = true; break;
             case 'u': conf->mode_a = true; break;
             case 'o': conf->mode_b = true; break;
