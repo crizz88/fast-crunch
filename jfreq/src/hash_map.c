@@ -80,7 +80,7 @@ static inline uint32_t storeExternal(AttributeLabel *label) {
                                            memory_order_relaxed);
     ensure_external_space(map.external_storage_offset);
 
-    uint8_t *base = (uint8_t*) atomic_load_explicit(&map.external_storage, memory_order_acquire);
+    uint8_t *base = (uint8_t *)map.external_storage;
 
     *(uint32_t*)(base + off) = (uint32_t)label->size;
     char *dest_str = (char*) (base + off + sizeof(uint32_t));
