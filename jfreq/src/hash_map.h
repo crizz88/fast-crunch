@@ -37,8 +37,9 @@ typedef struct {
   */
 typedef struct Extend {
     _Atomic(struct Extend*) next;       // next pointer
-    _Atomic uint_least8_t occupied;     // indicate occupied / free slot, also locking bit for modification
-    uint8_t padding[7];             // indicate duplicates
+    _Atomic uint_least8_t occupied;     // indicate occupied / free slot
+    _Atomic uint_least8_t visible;    // indicate visible slots for reading.
+    uint8_t padding[6];             // indicate duplicates
     HashEntry data[SLOTS_PER_EXTEND];       // store attribute-labels in the remaining space
 } __attribute__((aligned(CL_SIZE))) Extend;
 
